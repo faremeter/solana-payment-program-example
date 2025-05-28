@@ -29,7 +29,6 @@ export const test = async () => {
     })).json();
 
     console.log(secondResponse)
-
 }
 
 test()

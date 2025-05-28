@@ -9,16 +9,7 @@
   "instructions": [
     {
       "name": "create_payment",
-      "discriminator": [
-        28,
-        81,
-        85,
-        253,
-        7,
-        223,
-        154,
-        42
-      ],
+      "discriminator": [28, 81, 85, 253, 7, 223, 154, 42],
       "accounts": [
         {
           "name": "payer",
@@ -36,15 +27,7 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [
-                  112,
-                  97,
-                  121,
-                  109,
-                  101,
-                  110,
-                  116
-                ]
+                "value": [112, 97, 121, 109, 101, 110, 116]
               },
               {
                 "kind": "arg",
@@ -70,26 +53,14 @@
         {
           "name": "nonce",
           "type": {
-            "array": [
-              "u8",
-              32
-            ]
+            "array": ["u8", 32]
           }
         }
       ]
     },
     {
       "name": "settle_payment",
-      "discriminator": [
-        129,
-        7,
-        163,
-        250,
-        122,
-        226,
-        158,
-        249
-      ],
+      "discriminator": [129, 7, 163, 250, 122, 226, 158, 249],
       "accounts": [
         {
           "name": "admin",
@@ -103,15 +74,7 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [
-                  112,
-                  97,
-                  121,
-                  109,
-                  101,
-                  110,
-                  116
-                ]
+                "value": [112, 97, 121, 109, 101, 110, 116]
               },
               {
                 "kind": "arg",
@@ -137,19 +100,13 @@
         {
           "name": "payment_nonce",
           "type": {
-            "array": [
-              "u8",
-              32
-            ]
+            "array": ["u8", 32]
           }
         },
         {
           "name": "settle_nonce",
           "type": {
-            "array": [
-              "u8",
-              32
-            ]
+            "array": ["u8", 32]
           }
         }
       ]
@@ -158,16 +115,7 @@
   "accounts": [
     {
       "name": "Payment",
-      "discriminator": [
-        227,
-        231,
-        51,
-        26,
-        244,
-        88,
-        4,
-        148
-      ]
+      "discriminator": [227, 231, 51, 26, 244, 88, 4, 148]
     }
   ],
   "errors": [
@@ -190,10 +138,7 @@
           {
             "name": "nonce",
             "type": {
-              "array": [
-                "u8",
-                32
-              ]
+              "array": ["u8", 32]
             }
           },
           {
