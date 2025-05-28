@@ -26,7 +26,6 @@ const wallet = new Wallet(dummyKeypair)
 const provider = new AnchorProvider(connection, wallet, AnchorProvider.defaultOptions())
 
 export const program = new Program(idl as PaymentProgram, provider)
-console.log(program.programId)
 
 export const processTransaction = async (
     connection: Connection,
@@ -137,8 +136,6 @@ export const createPaymentTransaction = async (
         [Buffer.from('payment'), nonce, payer.publicKey.toBuffer()],
         program.programId,
     )
-
-    console.log(paymentAccount)
 
     const ixs = []
 

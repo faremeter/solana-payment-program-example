@@ -11,16 +11,13 @@ export const test = async () => {
     const url = "http://127.0.0.1:3000/protected"
 
     const initialResponse = await (await fetch(url)).json();
-
     const paymentRequirements: PaymentRequirements = {
         receiver: (initialResponse as any).address,
         amount: Number((initialResponse as any).amount)
     }
 
     const tx = await createPaymentTransaction(connection, paymentRequirements, keypair);
-
     const header = createPaymentHeader(tx, keypair);
-    console.log(header);
 
     const secondResponse = await (await fetch(url, {
         headers: {
