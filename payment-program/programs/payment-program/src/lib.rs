@@ -29,4 +29,27 @@ pub mod payment_program {
             settle_nonce,
         )
     }
+
+    pub fn buy_credits(
+        ctx: Context<BuyCredits>,
+        amount: u64,
+        nonce: [u8; 32],
+        credits: u64,
+    ) -> Result<()> {
+        instructions::buy_credits::buy_credits_instruction(ctx, amount, nonce, credits)
+    }
+
+    pub fn consume_credits(
+        ctx: Context<ConsumeCredits>,
+        original_payer: Pubkey,
+        purchase_nonce: [u8; 32],
+        credits_to_consume: u64,
+    ) -> Result<()> {
+        instructions::consume_credits::consume_credits_instruction(
+            ctx,
+            original_payer,
+            purchase_nonce,
+            credits_to_consume,
+        )
+    }
 }
