@@ -16,6 +16,8 @@ import idl from '../payment_program.json'
 import { AnchorProvider, BN, BorshCoder, Instruction, Program, Provider, Wallet } from '@coral-xyz/anchor'
 import { PaymentProgram } from './idl_type'
 
+import paymentProgramInfo from '../payment_program.json' assert { type: 'json' };
+
 export const coder = new BorshCoder(idl as PaymentProgram)
 
 const connection = new Connection(clusterApiUrl('devnet'))
@@ -57,7 +59,7 @@ export const isValidTransferTransaction = async (
 
     const transferIndex = transaction.transaction.message.compiledInstructions.findIndex((instruction) => {
         const programId = transaction.transaction.message.staticAccountKeys[instruction.programIdIndex]
-        return programId.equals(new PublicKey('DtNVgFBkqb3SSfAY6GH1HtouVcaSCaerHrE3ootDtKQV'))
+        return programId.equals(new PublicKey(paymentProgramInfo.address))
     })
 
     return transferIndex !== -1
@@ -91,7 +93,7 @@ export const extractTransferData = async (
 
     const transferIndex = transaction.transaction.message.compiledInstructions.findIndex((instruction) => {
         const programId = transaction.transaction.message.staticAccountKeys[instruction.programIdIndex]
-        return programId.equals(new PublicKey('DtNVgFBkqb3SSfAY6GH1HtouVcaSCaerHrE3ootDtKQV'))
+        return programId.equals(new PublicKey(paymentProgramInfo.address))
     })
 
     if (transferIndex === -1) {
