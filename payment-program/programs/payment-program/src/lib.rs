@@ -6,14 +6,40 @@ pub mod state;
 
 pub use instructions::*;
 
-declare_id!("DtNVgFBkqb3SSfAY6GH1HtouVcaSCaerHrE3ootDtKQV");
+declare_id!("723zQLNKPPd2sZY9Bu1Rtqk27cwJhzYGc8pgt3dtJS4z");
 
 #[program]
 pub mod payment_program {
     use super::*;
 
     pub fn create_payment(ctx: Context<CreatePayment>, amount: u64, nonce: [u8; 32]) -> Result<()> {
-        create_payment::create_payment_instruction(ctx, amount, nonce)
+        create_payment_sol::create_payment_instruction(ctx, amount, nonce)
+    }
+
+    pub fn create_payment_spl(
+        ctx: Context<CreatePaymentSPL>,
+        amount: u64,
+        nonce: [u8; 32],
+    ) -> Result<()> {
+        create_payment_spl::create_payment_spl_instruction(ctx, amount, nonce)
+    }
+
+    pub fn buy_credits_spl(
+        ctx: Context<BuyCreditsSPL>,
+        amount: u64,
+        nonce: [u8; 32],
+        credits: u64,
+    ) -> Result<()> {
+        buy_credits_spl::buy_credits_spl_instruction(ctx, amount, nonce, credits)
+    }
+
+    pub fn buy_credits(
+        ctx: Context<BuyCredits>,
+        amount: u64,
+        nonce: [u8; 32],
+        credits: u64,
+    ) -> Result<()> {
+        instructions::buy_credits_sol::buy_credits_instruction(ctx, amount, nonce, credits)
     }
 
     pub fn settle_payment(
@@ -28,15 +54,6 @@ pub mod payment_program {
             payment_nonce,
             settle_nonce,
         )
-    }
-
-    pub fn buy_credits(
-        ctx: Context<BuyCredits>,
-        amount: u64,
-        nonce: [u8; 32],
-        credits: u64,
-    ) -> Result<()> {
-        instructions::buy_credits::buy_credits_instruction(ctx, amount, nonce, credits)
     }
 
     pub fn consume_credits(

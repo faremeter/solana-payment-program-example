@@ -22,6 +22,7 @@ pub struct ConsumeCredits<'info> {
         bump = credit_purchase.bump,
     )]
     pub credit_purchase: Account<'info, CreditPurchase>,
+    /// CHECK: Anchor made me add this log
     pub original_payer_account: AccountInfo<'info>,
 }
 
