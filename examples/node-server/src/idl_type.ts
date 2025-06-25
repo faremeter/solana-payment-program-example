@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/payment_program.json`.
  */
 export type PaymentProgram = {
-  address: "DtNVgFBkqb3SSfAY6GH1HtouVcaSCaerHrE3ootDtKQV";
+  address: "723zQLNKPPd2sZY9Bu1Rtqk27cwJhzYGc8pgt3dtJS4z";
   metadata: {
     name: "paymentProgram";
     version: "0.1.0";
@@ -13,6 +13,228 @@ export type PaymentProgram = {
     description: "Created with Anchor";
   };
   instructions: [
+    {
+      name: "buyCredits";
+      discriminator: [14, 173, 58, 38, 248, 235, 115, 102];
+      accounts: [
+        {
+          name: "payer";
+          writable: true;
+          signer: true;
+        },
+        {
+          name: "receiver";
+          writable: true;
+        },
+        {
+          name: "creditPurchase";
+          writable: true;
+          pda: {
+            seeds: [
+              {
+                kind: "const";
+                value: [
+                  99,
+                  114,
+                  101,
+                  100,
+                  105,
+                  116,
+                  95,
+                  112,
+                  117,
+                  114,
+                  99,
+                  104,
+                  97,
+                  115,
+                  101,
+                ];
+              },
+              {
+                kind: "arg";
+                path: "nonce";
+              },
+              {
+                kind: "account";
+                path: "payer";
+              },
+            ];
+          };
+        },
+        {
+          name: "systemProgram";
+          address: "11111111111111111111111111111111";
+        },
+      ];
+      args: [
+        {
+          name: "amount";
+          type: "u64";
+        },
+        {
+          name: "nonce";
+          type: {
+            array: ["u8", 32];
+          };
+        },
+        {
+          name: "credits";
+          type: "u64";
+        },
+      ];
+    },
+    {
+      name: "buyCreditsSpl";
+      discriminator: [72, 227, 61, 53, 179, 39, 175, 111];
+      accounts: [
+        {
+          name: "payer";
+          writable: true;
+          signer: true;
+        },
+        {
+          name: "receiver";
+        },
+        {
+          name: "mint";
+        },
+        {
+          name: "payerTokenAccount";
+          writable: true;
+        },
+        {
+          name: "receiverTokenAccount";
+          writable: true;
+        },
+        {
+          name: "creditPurchase";
+          writable: true;
+          pda: {
+            seeds: [
+              {
+                kind: "const";
+                value: [
+                  99,
+                  114,
+                  101,
+                  100,
+                  105,
+                  116,
+                  95,
+                  112,
+                  117,
+                  114,
+                  99,
+                  104,
+                  97,
+                  115,
+                  101,
+                ];
+              },
+              {
+                kind: "arg";
+                path: "nonce";
+              },
+              {
+                kind: "account";
+                path: "payer";
+              },
+            ];
+          };
+        },
+        {
+          name: "systemProgram";
+          address: "11111111111111111111111111111111";
+        },
+        {
+          name: "tokenProgram";
+          address: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
+        },
+      ];
+      args: [
+        {
+          name: "amount";
+          type: "u64";
+        },
+        {
+          name: "nonce";
+          type: {
+            array: ["u8", 32];
+          };
+        },
+        {
+          name: "credits";
+          type: "u64";
+        },
+      ];
+    },
+    {
+      name: "consumeCredits";
+      discriminator: [44, 77, 95, 16, 223, 42, 48, 97];
+      accounts: [
+        {
+          name: "admin";
+          writable: true;
+          signer: true;
+        },
+        {
+          name: "creditPurchase";
+          writable: true;
+          pda: {
+            seeds: [
+              {
+                kind: "const";
+                value: [
+                  99,
+                  114,
+                  101,
+                  100,
+                  105,
+                  116,
+                  95,
+                  112,
+                  117,
+                  114,
+                  99,
+                  104,
+                  97,
+                  115,
+                  101,
+                ];
+              },
+              {
+                kind: "arg";
+                path: "purchaseNonce";
+              },
+              {
+                kind: "arg";
+                path: "originalPayer";
+              },
+            ];
+          };
+        },
+        {
+          name: "originalPayerAccount";
+        },
+      ];
+      args: [
+        {
+          name: "originalPayer";
+          type: "pubkey";
+        },
+        {
+          name: "purchaseNonce";
+          type: {
+            array: ["u8", 32];
+          };
+        },
+        {
+          name: "creditsToConsume";
+          type: "u64";
+        },
+      ];
+    },
     {
       name: "createPayment";
       discriminator: [28, 81, 85, 253, 7, 223, 154, 42];
@@ -49,6 +271,71 @@ export type PaymentProgram = {
         {
           name: "systemProgram";
           address: "11111111111111111111111111111111";
+        },
+      ];
+      args: [
+        {
+          name: "amount";
+          type: "u64";
+        },
+        {
+          name: "nonce";
+          type: {
+            array: ["u8", 32];
+          };
+        },
+      ];
+    },
+    {
+      name: "createPaymentSpl";
+      discriminator: [121, 30, 112, 26, 246, 53, 68, 140];
+      accounts: [
+        {
+          name: "payer";
+          writable: true;
+          signer: true;
+        },
+        {
+          name: "receiver";
+        },
+        {
+          name: "mint";
+        },
+        {
+          name: "payerTokenAccount";
+          writable: true;
+        },
+        {
+          name: "receiverTokenAccount";
+          writable: true;
+        },
+        {
+          name: "payment";
+          writable: true;
+          pda: {
+            seeds: [
+              {
+                kind: "const";
+                value: [112, 97, 121, 109, 101, 110, 116];
+              },
+              {
+                kind: "arg";
+                path: "nonce";
+              },
+              {
+                kind: "account";
+                path: "payer";
+              },
+            ];
+          };
+        },
+        {
+          name: "systemProgram";
+          address: "11111111111111111111111111111111";
+        },
+        {
+          name: "tokenProgram";
+          address: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
         },
       ];
       args: [
@@ -120,6 +407,10 @@ export type PaymentProgram = {
   ];
   accounts: [
     {
+      name: "creditPurchase";
+      discriminator: [49, 162, 24, 114, 239, 155, 148, 110];
+    },
+    {
       name: "payment";
       discriminator: [227, 231, 51, 26, 244, 88, 4, 148];
     },
@@ -130,8 +421,43 @@ export type PaymentProgram = {
       name: "unauthorized";
       msg: "Unauthorized: Only admin can settle payments";
     },
+    {
+      code: 6001;
+      name: "arithmeticOverflow";
+      msg: "Arithmetic overflow";
+    },
   ];
   types: [
+    {
+      name: "creditPurchase";
+      type: {
+        kind: "struct";
+        fields: [
+          {
+            name: "amount";
+            type: "u64";
+          },
+          {
+            name: "nonce";
+            type: {
+              array: ["u8", 32];
+            };
+          },
+          {
+            name: "payer";
+            type: "pubkey";
+          },
+          {
+            name: "credits";
+            type: "u64";
+          },
+          {
+            name: "bump";
+            type: "u8";
+          },
+        ];
+      };
+    },
     {
       name: "payment";
       type: {

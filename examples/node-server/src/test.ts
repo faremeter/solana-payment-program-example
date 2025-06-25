@@ -5,11 +5,19 @@ import {
   LAMPORTS_PER_SOL,
   PublicKey,
 } from "@solana/web3.js";
-import { createPaymentTransaction } from "./solana";
+import {
+  createPaymentSplTransaction,
+  createPaymentTransaction,
+} from "./solana";
 import { PaymentRequirements } from "./types";
 import fetch from "node-fetch";
 import { createPaymentHeader } from "./header";
 import fs from "fs";
+import {
+  createMint,
+  getOrCreateAssociatedTokenAccount,
+  mintTo,
+} from "@solana/spl-token";
 
 export const test = async () => {
   const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
@@ -22,13 +30,23 @@ export const test = async () => {
 
   const initialResponse = await (await fetch(url)).json();
   const paymentRequirements: PaymentRequirements = {
-    receiver: (initialResponse as any).address,
+    receiver: new PublicKey((initialResponse as any).address),
     amount: Number((initialResponse as any).amount),
   };
+  const mint = await createTestToken(connection, keypair);
 
-  const tx = await createPaymentTransaction(
+  // Create token account for receiver
+  await getOrCreateAssociatedTokenAccount(
+    connection,
+    keypair,
+    mint,
+    paymentRequirements.receiver,
+  );
+
+  const tx = await createPaymentSplTransaction(
     connection,
     paymentRequirements,
+    mint,
     keypair,
   );
   const header = createPaymentHeader(tx, keypair);
@@ -42,6 +60,49 @@ export const test = async () => {
   ).json();
 
   console.log(secondResponse);
+};
+
+export const createTestToken = async (
+  connection: Connection,
+  payer: Keypair,
+  decimals: number = 6,
+): Promise<PublicKey> => {
+  try {
+    const mint = await createMint(
+      connection,
+      payer,
+      payer.publicKey,
+      payer.publicKey,
+      decimals,
+    );
+
+    console.log(`Created new test token: ${mint.toString()}`);
+
+    const tokenAccount = await getOrCreateAssociatedTokenAccount(
+      connection,
+      payer,
+      mint,
+      payer.publicKey,
+    );
+
+    const amountToMint = 1000000 * Math.pow(10, decimals);
+    await mintTo(
+      connection,
+      payer,
+      mint,
+      tokenAccount.address,
+      payer.publicKey,
+      amountToMint,
+    );
+
+    console.log(
+      `Minted ${1000000} tokens to ${tokenAccount.address.toString()}`,
+    );
+    return mint;
+  } catch (error) {
+    console.error("Error creating test token:", error);
+    throw error;
+  }
 };
 
 test();
