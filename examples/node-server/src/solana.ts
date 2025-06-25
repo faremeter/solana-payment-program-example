@@ -1,9 +1,9 @@
 import {
   clusterApiUrl,
   Keypair,
-  MessageV0,
   PublicKey,
   SystemProgram,
+  TransactionInstruction,
   TransactionMessage,
   TransactionSignature,
   VersionedTransaction,
@@ -19,8 +19,11 @@ import {
   Wallet,
 } from "@coral-xyz/anchor";
 import { PaymentProgram } from "./idl_type";
-
-import paymentProgramInfo from "../payment_program.json" assert { type: "json" };
+import paymentProgramInfo from "../payment_program.json";
+import {
+  getAssociatedTokenAddressSync,
+  TOKEN_PROGRAM_ID,
+} from "@solana/spl-token";
 
 export const coder = new BorshCoder(idl as PaymentProgram);
 
@@ -75,6 +78,10 @@ export const isValidTransferTransaction = async (
           transaction.transaction.message.staticAccountKeys[
             instruction.programIdIndex
           ];
+
+        if (programId === undefined) {
+          return false;
+        }
         return programId.equals(new PublicKey(paymentProgramInfo.address));
       },
     );
@@ -115,6 +122,9 @@ export const extractTransferData = async (
           transaction.transaction.message.staticAccountKeys[
             instruction.programIdIndex
           ];
+        if (programId === undefined) {
+          return false;
+        }
         return programId.equals(new PublicKey(paymentProgramInfo.address));
       },
     );
@@ -126,14 +136,36 @@ export const extractTransferData = async (
     };
   }
 
-  const payer =
-    transaction.transaction.message.staticAccountKeys[
-      transaction.transaction.message.compiledInstructions[transferIndex]
-        .accountKeyIndexes[0]
-    ];
+  const message = transaction.transaction.message;
 
-  const transferData =
-    transaction.transaction.message.compiledInstructions[transferIndex].data;
+  const payerKeyIndex =
+    message.compiledInstructions[transferIndex]?.accountKeyIndexes[0];
+
+  if (payerKeyIndex === undefined) {
+    return {
+      success: false,
+      err: "Cound not find payer index",
+    };
+  }
+
+  const payer = message.staticAccountKeys[payerKeyIndex];
+
+  if (payer === undefined) {
+    return {
+      success: false,
+      err: "Cound not find payer",
+    };
+  }
+
+  const transferData = message.compiledInstructions[transferIndex]?.data;
+
+  if (transferData === undefined) {
+    return {
+      success: false,
+      err: "Cound not find transfer data",
+    };
+  }
+
   const decoded = coder.instruction.decode(Buffer.from(transferData));
 
   if (!decoded) {
@@ -159,15 +191,23 @@ export const createPaymentTransaction = async (
 ): Promise<VersionedTransaction> => {
   const nonce = crypto.getRandomValues(new Uint8Array(32));
 
-  const [paymentAccount, bump] = PublicKey.findProgramAddressSync(
+  const [paymentAccount] = PublicKey.findProgramAddressSync(
     [Buffer.from("payment"), nonce, payer.publicKey.toBuffer()],
     program.programId,
   );
 
   const ixs = [];
 
-  const programInstruction = await program.methods
-    .createPayment(new BN(paymentRequirements.amount), Array.from(nonce))
+  const createPayment = program.methods.createPaymentSol;
+
+  if (createPayment === undefined) {
+    throw new Error("couldn't find create payment instruction");
+  }
+
+  const programInstruction = await createPayment(
+    new BN(paymentRequirements.amount),
+    Array.from(nonce),
+  )
     .accountsStrict({
       payer: payer.publicKey,
       receiver: paymentRequirements.receiver,
@@ -177,18 +217,7 @@ export const createPaymentTransaction = async (
     .instruction();
   ixs.push(programInstruction);
 
-  const { blockhash } = await connection.getLatestBlockhash("confirmed");
-
-  const message = new TransactionMessage({
-    instructions: ixs,
-    payerKey: payer.publicKey,
-    recentBlockhash: blockhash,
-  }).compileToV0Message();
-
-  const tx = new VersionedTransaction(message);
-  tx.sign([payer]);
-
-  return tx;
+  return buildVersionedTransaction(connection, ixs, payer);
 };
 
 export const createSettleTransaction = async (
@@ -212,8 +241,17 @@ export const createSettleTransaction = async (
 
   const ixs = [];
 
-  const programInstruction = await program.methods
-    .settlePayment(payer, paymentNonce, Array.from(settleNonce))
+  const settlePayment = program.methods.settlePayment;
+
+  if (settlePayment === undefined) {
+    throw new Error("couldn't find settle payment instruction");
+  }
+
+  const programInstruction = await settlePayment(
+    payer,
+    paymentNonce,
+    Array.from(settleNonce),
+  )
     .accountsStrict({
       admin: settleAuthority.publicKey,
       payment: paymentAccount,
@@ -262,4 +300,74 @@ export const settleTransaction = async (
   return {
     success: true,
   };
+};
+
+export const createPaymentSplTransaction = async (
+  connection: Connection,
+  paymentRequirements: PaymentRequirements,
+  mint: PublicKey,
+  payer: Keypair,
+): Promise<VersionedTransaction> => {
+  const nonce = crypto.getRandomValues(new Uint8Array(32));
+
+  const [paymentAccount] = PublicKey.findProgramAddressSync(
+    [Buffer.from("payment"), nonce, payer.publicKey.toBuffer()],
+    program.programId,
+  );
+
+  const payerTokenAccount = getAssociatedTokenAddressSync(
+    mint,
+    payer.publicKey,
+  );
+  const receiverTokenAccount = getAssociatedTokenAddressSync(
+    mint,
+    paymentRequirements.receiver,
+  );
+
+  const ixs = [];
+
+  const createPaymentSpl = program.methods.createPaymentSpl;
+
+  if (createPaymentSpl === undefined) {
+    throw new Error("couldn't find create payment spl instruction");
+  }
+
+  const programInstruction = await createPaymentSpl(
+    new BN(paymentRequirements.amount),
+    Array.from(nonce),
+  )
+    .accountsStrict({
+      payer: payer.publicKey,
+      receiver: paymentRequirements.receiver,
+      mint: mint,
+      payerTokenAccount: payerTokenAccount,
+      receiverTokenAccount: receiverTokenAccount,
+      payment: paymentAccount,
+      systemProgram: SystemProgram.programId,
+      tokenProgram: TOKEN_PROGRAM_ID,
+    })
+    .instruction();
+
+  ixs.push(programInstruction);
+
+  return buildVersionedTransaction(connection, ixs, payer);
+};
+
+const buildVersionedTransaction = async (
+  connection: Connection,
+  instructions: TransactionInstruction[],
+  payer: Keypair,
+): Promise<VersionedTransaction> => {
+  const { blockhash } = await connection.getLatestBlockhash("confirmed");
+
+  const message = new TransactionMessage({
+    instructions,
+    payerKey: payer.publicKey,
+    recentBlockhash: blockhash,
+  }).compileToV0Message();
+
+  const tx = new VersionedTransaction(message);
+  tx.sign([payer]);
+
+  return tx;
 };
