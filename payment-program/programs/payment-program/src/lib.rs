@@ -12,7 +12,7 @@ declare_id!("723zQLNKPPd2sZY9Bu1Rtqk27cwJhzYGc8pgt3dtJS4z");
 pub mod payment_program {
     use super::*;
 
-    pub fn create_payment(ctx: Context<CreatePayment>, amount: u64, nonce: [u8; 32]) -> Result<()> {
+    pub fn create_payment_sol(ctx: Context<CreatePayment>, amount: u64, nonce: [u8; 32]) -> Result<()> {
         create_payment_sol::create_payment_instruction(ctx, amount, nonce)
     }
 
@@ -33,7 +33,7 @@ pub mod payment_program {
         buy_credits_spl::buy_credits_spl_instruction(ctx, amount, nonce, credits)
     }
 
-    pub fn buy_credits(
+    pub fn buy_credits_sol(
         ctx: Context<BuyCredits>,
         amount: u64,
         nonce: [u8; 32],
