@@ -34,6 +34,7 @@ impl CreditPurchase {
         // If we try to subtract more credits than are available, we set 0 remaining
         if amount > self.credits {
             self.credits = 0;
+            return Ok(());
         }
 
         self.credits = self
