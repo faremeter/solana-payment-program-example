@@ -12,7 +12,7 @@ pub struct SettlePayment<'info> {
     pub admin: Signer<'info>,
     #[account(
         mut,
-        close = original_payer_account, 
+        close = original_payer_account,
         seeds = [
             Payment::SEED_PREFIX,
             payment_nonce.as_ref(),
@@ -30,14 +30,10 @@ pub fn settle_payment_instructions(
     ctx: Context<SettlePayment>,
     original_payer: Pubkey,
     _payment_nonce: [u8; 32],
-    _settle_nonce: [u8; 32] // Unique nonce for settling to avoid race conditions
+    _settle_nonce: [u8; 32], // Unique nonce for settling to avoid race conditions
 ) -> Result<()> {
-
-    if ctx.accounts.payment.payer != original_payer {
-
-    }
+    if ctx.accounts.payment.payer != original_payer {}
 
     msg!("Payment successfully settled");
     Ok(())
 }
-
