@@ -9,7 +9,7 @@ import {
   createPaymentSplTransaction,
   createPaymentTransaction,
 } from "./solana";
-import { PaymentRequirements } from "./types";
+import { PaymentRequirements, PaymentResponse } from "./types";
 import fetch from "node-fetch";
 import { createPaymentHeader } from "./header";
 import fs from "fs";
@@ -28,11 +28,17 @@ export const test = async () => {
   );
   const url = "http://127.0.0.1:3000/protected";
 
-  const initialResponse = await (await fetch(url)).json();
+  const initialResponse = (await (await fetch(url)).json()) as PaymentResponse;
+
+  // Elegant destructuring with proper typing
+  const { address, admin, amount } = initialResponse;
+
   const paymentRequirements: PaymentRequirements = {
-    receiver: new PublicKey((initialResponse as any).address),
-    amount: Number((initialResponse as any).amount),
+    receiver: new PublicKey(address),
+    admin: new PublicKey(admin),
+    amount: Number(amount),
   };
+
   const mint = await createTestToken(connection, keypair);
 
   // Create token account for receiver

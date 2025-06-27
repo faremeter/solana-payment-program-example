@@ -14,8 +14,8 @@ export type PaymentProgram = {
   };
   instructions: [
     {
-      name: "buyCredits";
-      discriminator: [14, 173, 58, 38, 248, 235, 115, 102];
+      name: "buyCreditsSol";
+      discriminator: [240, 164, 151, 250, 123, 81, 38, 87];
       accounts: [
         {
           name: "payer";
@@ -25,6 +25,9 @@ export type PaymentProgram = {
         {
           name: "receiver";
           writable: true;
+        },
+        {
+          name: "admin";
         },
         {
           name: "creditPurchase";
@@ -95,6 +98,9 @@ export type PaymentProgram = {
         },
         {
           name: "receiver";
+        },
+        {
+          name: "admin";
         },
         {
           name: "mint";
@@ -236,8 +242,8 @@ export type PaymentProgram = {
       ];
     },
     {
-      name: "createPayment";
-      discriminator: [28, 81, 85, 253, 7, 223, 154, 42];
+      name: "createPaymentSol";
+      discriminator: [34, 102, 228, 73, 166, 205, 253, 164];
       accounts: [
         {
           name: "payer";
@@ -247,6 +253,9 @@ export type PaymentProgram = {
         {
           name: "receiver";
           writable: true;
+        },
+        {
+          name: "admin";
         },
         {
           name: "payment";
@@ -297,6 +306,9 @@ export type PaymentProgram = {
         },
         {
           name: "receiver";
+        },
+        {
+          name: "admin";
         },
         {
           name: "mint";
@@ -448,6 +460,10 @@ export type PaymentProgram = {
             type: "pubkey";
           },
           {
+            name: "admin";
+            type: "pubkey";
+          },
+          {
             name: "credits";
             type: "u64";
           },
@@ -475,6 +491,10 @@ export type PaymentProgram = {
           },
           {
             name: "payer";
+            type: "pubkey";
+          },
+          {
+            name: "admin";
             type: "pubkey";
           },
           {

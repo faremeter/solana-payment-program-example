@@ -211,6 +211,7 @@ export const createPaymentTransaction = async (
     .accountsStrict({
       payer: payer.publicKey,
       receiver: paymentRequirements.receiver,
+      admin: paymentRequirements.admin,
       payment: paymentAccount,
       systemProgram: SystemProgram.programId,
     })
@@ -339,6 +340,7 @@ export const createPaymentSplTransaction = async (
     .accountsStrict({
       payer: payer.publicKey,
       receiver: paymentRequirements.receiver,
+      admin: paymentRequirements.admin,
       mint: mint,
       payerTokenAccount: payerTokenAccount,
       receiverTokenAccount: receiverTokenAccount,
