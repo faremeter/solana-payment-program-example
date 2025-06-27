@@ -10,6 +10,9 @@ pub struct CreatePayment<'info> {
     #[account(mut)]
     /// CHECK: anchor made me add this
     receiver: AccountInfo<'info>,
+    /// CHECK: The admin who will be able to settle this payment
+    admin: AccountInfo<'info>,
+
     #[account(
         init,
         space = 8 + Payment::INIT_SPACE,
@@ -33,7 +36,8 @@ pub fn create_payment_instruction(
     *ctx.accounts.payment = Payment {
         amount,
         nonce,
-        payer: *ctx.accounts.payer.key,
+        payer: ctx.accounts.payer.key(),
+        admin: ctx.accounts.admin.key(),
         bump: ctx.bumps.payment,
     };
 
