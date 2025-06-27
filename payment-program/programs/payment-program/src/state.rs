@@ -8,6 +8,7 @@ pub struct Payment {
     pub amount: u64,
     pub nonce: [u8; 32],
     pub payer: Pubkey,
+    pub admin: Pubkey,
     pub bump: u8,
 }
 
@@ -21,6 +22,7 @@ pub struct CreditPurchase {
     pub amount: u64,
     pub nonce: [u8; 32],
     pub payer: Pubkey,
+    pub admin: Pubkey,
     pub credits: u64,
     pub bump: u8,
 }

@@ -9,6 +9,8 @@ pub struct BuyCredits<'info> {
     #[account(mut)]
     /// CHECK: anchor made me add this
     pub receiver: AccountInfo<'info>,
+    /// CHECK: The admin who will be able to settle this payment
+    pub admin: AccountInfo<'info>,
     #[account(
         init,
         space = 8 + CreditPurchase::INIT_SPACE,
@@ -35,6 +37,7 @@ pub fn buy_credits_instruction(
         nonce,
         credits,
         payer: ctx.accounts.payer.key(),
+        admin: ctx.accounts.admin.key(),
         bump: ctx.bumps.credit_purchase,
     };
 

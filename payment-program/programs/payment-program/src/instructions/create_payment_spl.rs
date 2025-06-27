@@ -11,6 +11,8 @@ pub struct CreatePaymentSPL<'info> {
 
     /// CHECK: The owner of the receiver token account
     pub receiver: AccountInfo<'info>,
+    /// CHECK: The admin who will be able to settle this payment
+    pub admin: AccountInfo<'info>,
 
     pub mint: Account<'info, Mint>,
 
@@ -53,7 +55,8 @@ pub fn create_payment_spl_instruction(
     *ctx.accounts.payment = Payment {
         amount,
         nonce,
-        payer: *ctx.accounts.payer.key,
+        payer: ctx.accounts.payer.key(),
+        admin: ctx.accounts.admin.key(),
         bump: ctx.bumps.payment,
     };
 

@@ -1,18 +1,13 @@
-use std::str::FromStr;
-
 use anchor_lang::prelude::*;
 
 use crate::{errors::PaymentError, state::Payment};
-
-const ADMIN_PUBKEY: &str = "FVzDWKbjqQRtbf9ZppAnDscH4PDAjt7nggxkUpsTwzGj";
-
 
 #[derive(Accounts)]
 #[instruction(original_payer: Pubkey, payment_nonce: [u8; 32], settle_nonce: [u8; 32])]
 pub struct SettlePayment<'info> {
     #[account(
         mut,
-        constraint = admin.key() == Pubkey::from_str(ADMIN_PUBKEY).unwrap() @ PaymentError::Unauthorized
+        constraint = admin.key() == payment.admin @ PaymentError::Unauthorized
     )]
     pub admin: Signer<'info>,
     #[account(

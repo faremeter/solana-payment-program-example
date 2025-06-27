@@ -1,15 +1,12 @@
 use crate::{errors::PaymentError, state::CreditPurchase};
 use anchor_lang::prelude::*;
-use std::str::FromStr;
-
-const ADMIN_PUBKEY: &str = "FVzDWKbjqQRtbf9ZppAnDscH4PDAjt7nggxkUpsTwzGj";
 
 #[derive(Accounts)]
 #[instruction(original_payer: Pubkey, purchase_nonce: [u8; 32], credits_to_consume: u64)]
 pub struct ConsumeCredits<'info> {
     #[account(
         mut,
-        constraint = admin.key() == Pubkey::from_str(ADMIN_PUBKEY).unwrap() @ PaymentError::Unauthorized
+        constraint = admin.key() == credit_purchase.admin @ PaymentError::Unauthorized
     )]
     pub admin: Signer<'info>,
     #[account(
