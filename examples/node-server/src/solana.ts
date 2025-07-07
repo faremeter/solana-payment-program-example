@@ -24,6 +24,7 @@ import {
   getAssociatedTokenAddressSync,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
+import bs58 from "bs58";
 
 export const coder = new BorshCoder(idl as PaymentProgram);
 
@@ -66,11 +67,11 @@ export const isValidTransferTransaction = async (
     commitment: "confirmed",
     maxSupportedTransactionVersion: 0,
   });
-
   if (!transaction || transaction.meta?.err) {
     return false;
   }
 
+  // Check top-level instructions
   const transferIndex =
     transaction.transaction.message.compiledInstructions.findIndex(
       (instruction) => {
@@ -78,7 +79,6 @@ export const isValidTransferTransaction = async (
           transaction.transaction.message.staticAccountKeys[
             instruction.programIdIndex
           ];
-
         if (programId === undefined) {
           return false;
         }
@@ -86,7 +86,32 @@ export const isValidTransferTransaction = async (
       },
     );
 
-  return transferIndex !== -1;
+  if (transferIndex !== -1) {
+    return true;
+  }
+
+  // Check inner instructions (CPIs)
+  if (transaction.meta?.innerInstructions) {
+    for (const innerInstructionSet of transaction.meta.innerInstructions) {
+      const hasTransferInstruction = innerInstructionSet.instructions.some(
+        (instruction) => {
+          const programId =
+            transaction.transaction.message.staticAccountKeys[
+              instruction.programIdIndex
+            ];
+          if (programId === undefined) {
+            return false;
+          }
+          return programId.equals(new PublicKey(paymentProgramInfo.address));
+        },
+      );
+      if (hasTransferInstruction) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 };
 
 export const extractTransferData = async (
@@ -107,7 +132,6 @@ export const extractTransferData = async (
     commitment: "confirmed",
     maxSupportedTransactionVersion: 0,
   });
-
   if (!transaction || transaction.meta?.err) {
     return {
       success: false,
@@ -115,72 +139,111 @@ export const extractTransferData = async (
     };
   }
 
-  const transferIndex =
-    transaction.transaction.message.compiledInstructions.findIndex(
-      (instruction) => {
-        const programId =
-          transaction.transaction.message.staticAccountKeys[
-            instruction.programIdIndex
-          ];
-        if (programId === undefined) {
-          return false;
-        }
-        return programId.equals(new PublicKey(paymentProgramInfo.address));
-      },
-    );
-
-  if (transferIndex === -1) {
-    return {
-      success: false,
-      err: "Transaction does not contain transfer instruction",
-    };
-  }
-
   const message = transaction.transaction.message;
 
-  const payerKeyIndex =
-    message.compiledInstructions[transferIndex]?.accountKeyIndexes[0];
+  // Check top-level instructions
+  const transferIndex = message.compiledInstructions.findIndex(
+    (instruction) => {
+      const programId = message.staticAccountKeys[instruction.programIdIndex];
+      if (programId === undefined) {
+        return false;
+      }
+      return programId.equals(new PublicKey(paymentProgramInfo.address));
+    },
+  );
 
-  if (payerKeyIndex === undefined) {
+  if (transferIndex !== -1) {
+    const payerKeyIndex =
+      message.compiledInstructions[transferIndex]?.accountKeyIndexes[0];
+    if (payerKeyIndex === undefined) {
+      return {
+        success: false,
+        err: "Could not find payer index",
+      };
+    }
+    const payer = message.staticAccountKeys[payerKeyIndex];
+    if (payer === undefined) {
+      return {
+        success: false,
+        err: "Could not find payer",
+      };
+    }
+    const transferData = message.compiledInstructions[transferIndex]?.data;
+    if (transferData === undefined) {
+      return {
+        success: false,
+        err: "Could not find transfer data",
+      };
+    }
+    const decoded = coder.instruction.decode(Buffer.from(transferData));
+    if (!decoded) {
+      return {
+        success: false,
+        err: "Unable to decode data",
+      };
+    }
+    const typedData = decoded.data as CreatePaymentArgs;
     return {
-      success: false,
-      err: "Cound not find payer index",
+      success: true,
+      payer,
+      data: typedData,
     };
   }
 
-  const payer = message.staticAccountKeys[payerKeyIndex];
-
-  if (payer === undefined) {
-    return {
-      success: false,
-      err: "Cound not find payer",
-    };
+  // Check inner instructions (CPIs)
+  if (transaction.meta?.innerInstructions) {
+    for (const innerInstructionSet of transaction.meta.innerInstructions) {
+      for (const instruction of innerInstructionSet.instructions) {
+        const programId = message.staticAccountKeys[instruction.programIdIndex];
+        if (programId === undefined) {
+          continue;
+        }
+        if (programId.equals(new PublicKey(paymentProgramInfo.address))) {
+          const payerKeyIndex = instruction.accounts[0];
+          if (payerKeyIndex === undefined) {
+            return {
+              success: false,
+              err: "Could not find payer index in inner instruction",
+            };
+          }
+          const payer = message.staticAccountKeys[payerKeyIndex];
+          if (payer === undefined) {
+            return {
+              success: false,
+              err: "Could not find payer in inner instruction",
+            };
+          }
+          const transferData = instruction.data;
+          if (transferData === undefined) {
+            return {
+              success: false,
+              err: "Could not find transfer data in inner instruction",
+            };
+          }
+          // Inner instruction data is base58 encoded for some reason
+          const decoded = coder.instruction.decode(
+            Buffer.from(bs58.decode(transferData)),
+          );
+          if (!decoded) {
+            return {
+              success: false,
+              err: "Unable to decode data from inner instruction",
+            };
+          }
+          const typedData = decoded.data as CreatePaymentArgs;
+          return {
+            success: true,
+            payer,
+            data: typedData,
+          };
+        }
+      }
+    }
   }
-
-  const transferData = message.compiledInstructions[transferIndex]?.data;
-
-  if (transferData === undefined) {
-    return {
-      success: false,
-      err: "Cound not find transfer data",
-    };
-  }
-
-  const decoded = coder.instruction.decode(Buffer.from(transferData));
-
-  if (!decoded) {
-    return {
-      success: false,
-      err: "Unable to decode data",
-    };
-  }
-
-  const typedData = decoded.data as CreatePaymentArgs;
 
   return {
-    success: true,
-    payer,
-    data: typedData,
+    success: false,
+    err: "Transaction does not contain transfer instruction",
   };
 };
 
