@@ -247,19 +247,16 @@ export const extractTransferData = async (
   };
 };
 
-export const createPaymentTransaction = async (
-  connection: Connection,
+export const createSolPaymentInstruction = async (
   paymentRequirements: PaymentRequirements,
-  payer: Keypair,
-): Promise<VersionedTransaction> => {
+  payer: PublicKey,
+): Promise<TransactionInstruction> => {
   const nonce = crypto.getRandomValues(new Uint8Array(32));
 
   const [paymentAccount] = PublicKey.findProgramAddressSync(
-    [Buffer.from("payment"), nonce, payer.publicKey.toBuffer()],
+    [Buffer.from("payment"), nonce, payer.toBuffer()],
     program.programId,
   );
-
-  const ixs = [];
 
   const createPayment = program.methods.createPaymentSol;
 
@@ -272,16 +269,28 @@ export const createPaymentTransaction = async (
     Array.from(nonce),
   )
     .accountsStrict({
-      payer: payer.publicKey,
+      payer: payer,
       receiver: paymentRequirements.receiver,
       admin: paymentRequirements.admin,
       payment: paymentAccount,
       systemProgram: SystemProgram.programId,
     })
     .instruction();
-  ixs.push(programInstruction);
 
-  return buildVersionedTransaction(connection, ixs, payer);
+  return programInstruction;
+};
+
+export const createPaymentTransaction = async (
+  connection: Connection,
+  paymentRequirements: PaymentRequirements,
+  payer: Keypair,
+): Promise<VersionedTransaction> => {
+  const instruction = await createSolPaymentInstruction(
+    paymentRequirements,
+    payer.publicKey,
+  );
+
+  return buildVersionedTransaction(connection, [instruction], payer);
 };
 
 export const createSettleTransaction = async (
@@ -366,29 +375,23 @@ export const settleTransaction = async (
   };
 };
 
-export const createPaymentSplTransaction = async (
-  connection: Connection,
+export const createSplPaymentInstruction = async (
   paymentRequirements: PaymentRequirements,
   mint: PublicKey,
-  payer: Keypair,
-): Promise<VersionedTransaction> => {
+  payer: PublicKey,
+): Promise<TransactionInstruction> => {
   const nonce = crypto.getRandomValues(new Uint8Array(32));
 
   const [paymentAccount] = PublicKey.findProgramAddressSync(
-    [Buffer.from("payment"), nonce, payer.publicKey.toBuffer()],
+    [Buffer.from("payment"), nonce, payer.toBuffer()],
     program.programId,
   );
 
-  const payerTokenAccount = getAssociatedTokenAddressSync(
-    mint,
-    payer.publicKey,
-  );
+  const payerTokenAccount = getAssociatedTokenAddressSync(mint, payer);
   const receiverTokenAccount = getAssociatedTokenAddressSync(
     mint,
     paymentRequirements.receiver,
   );
-
-  const ixs = [];
 
   const createPaymentSpl = program.methods.createPaymentSpl;
 
@@ -401,7 +404,7 @@ export const createPaymentSplTransaction = async (
     Array.from(nonce),
   )
     .accountsStrict({
-      payer: payer.publicKey,
+      payer: payer,
       receiver: paymentRequirements.receiver,
       admin: paymentRequirements.admin,
       mint: mint,
@@ -413,9 +416,22 @@ export const createPaymentSplTransaction = async (
     })
     .instruction();
 
-  ixs.push(programInstruction);
+  return programInstruction;
+};
 
-  return buildVersionedTransaction(connection, ixs, payer);
+export const createPaymentSplTransaction = async (
+  connection: Connection,
+  paymentRequirements: PaymentRequirements,
+  mint: PublicKey,
+  payer: Keypair,
+): Promise<VersionedTransaction> => {
+  const instruction = await createSplPaymentInstruction(
+    paymentRequirements,
+    mint,
+    payer.publicKey,
+  );
+
+  return buildVersionedTransaction(connection, [instruction], payer);
 };
 
 const buildVersionedTransaction = async (
